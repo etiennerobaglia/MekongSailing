@@ -1,18 +1,59 @@
+<template>
+  <div class="map-wrapper">
+    <input class="slider" type="range" min="0" max="100" />
+    <div class="map" id="map"></div>
+  </div>
+  <div class="contents" id="scrollTarget" ref="scrollTarget">
+    <div class="wrapper"></div>
+  </div>
+</template>
+
 <script setup>
 import mapboxgl from 'mapbox-gl'
 import mekongGeoJSON from '../../mekong-line.json'
 import "mapbox-gl/dist/mapbox-gl.css";
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import * as turf from '@turf/turf'
 
-const mekong = ref(mekongGeoJSON)
+const props = defineProps(['sliderPosition'])
 const emit = defineEmits(['mapLoaded', 'mapStyleLoaded'])
 
-onMounted(async () => {
-  const scrollAreaH = ref(document.getElementById('scrollTarget').offsetHeight);
 
-  const supportPageOffset = ref(window.scrollX !== undefined)
-  const isCSS1Compat = ref(((document.compatMode || "") === "CSS1Compat"))
+const mapPromise = ref()
+const mekong = ref(mekongGeoJSON)
+const scrollTarget = ref(null)
+const y = ref(0)
+const rate = ref(0)
+const cameraAltitude = ref(2500);
+const routeLength = ref(turf.length(turf.lineString(mekong.value)));
+const cameraRouteLength = ref(turf.length(turf.lineString(mekong.value)));
+const alongRoute = ref(0)
+const alongCamera = ref(0)
+const pitch = ref(0.0015)
+const scrollTargetHeight = ref(null)
+
+const updateScroll = () => {
+  y.value =
+    window.scrollX !== undefined
+      ? window.scrollY
+      : ((document.compatMode || "") === "CSS1Compat")
+        ? document.documentElement.scrollTop
+        : document.body.scrollTop;
+  rate.value = y.value / scrollTarget.value.offsetHeight;
+  alongCamera.value = turf.along(
+    turf.lineString(mekong.value),
+    cameraRouteLength.value * rate.value
+  ).geometry.coordinates
+  alongRoute.value = turf.along(
+    turf.lineString(mekong.value),
+    routeLength.value * (rate.value + pitch.value)
+  ).geometry.coordinates
+};
+
+onMounted(async () => {
+  scrollTargetHeight.value = scrollTarget.value.offsetHeight
+  updateScroll();
+  window.addEventListener('scroll', updateScroll);
 
   // map setup
   mapboxgl.accessToken = "pk.eyJ1IjoiZXRyb2JhIiwiYSI6ImNsaDR1M3RtYTIxNDgzY29nYjk0azF3eG8ifQ.cf9iT5VHX-AR-QzHwHVLVQ"
@@ -20,12 +61,12 @@ onMounted(async () => {
     container: 'map',
     style: 'mapbox://styles/mapbox/satellite-v9',
     bounds: [
-      [100.6054, 20.1209], [100.0298, 20.4225]
+      [100.6054, 20.1209],
+      [100.0298, 20.4225]
     ]
-
-
   });
 
+  map.addControl(new mapboxgl.NavigationControl());
 
   map.on('style.load', () => {
     emit('mapStyleLoaded')
@@ -46,8 +87,8 @@ onMounted(async () => {
       source: 'trace',
       id: 'line',
       paint: {
-        'line-color': '#DD2A12',
-        'line-width': 2
+        'line-color': '#80979F',
+        'line-width': 3
       },
       layout: {
         'line-cap': 'round',
@@ -95,54 +136,25 @@ onMounted(async () => {
 
   map.on('load', () => {
     emit('mapLoaded')
-    // const animationDuration = 5000000;
-    // const cameraAltitude = 50000;
-    const cameraAltitude_base = 2500;
-
-    // get the overall length of each route so we can interpolate along them
-    const routeLength = turf.length(turf.lineString(mekong.value));
-    const cameraRouteLength = turf.length(turf.lineString(mekong.value));
+    mapPromise.value = Promise.resolve(map);
 
     function frame() {
       ticking = false;
 
-      // rate determines how far through the animation we are
-      const y = supportPageOffset.value ? window.scrollY : isCSS1Compat.value ? document.documentElement.scrollTop : document.body.scrollTop;
-      const rate = y / scrollAreaH.value;
-
-      // find the best value with your eyes
-      const cameraAltitude =
-        cameraAltitude_base + (rate * rate * 10000);
-
-      // use the rate to get a point that is the appropriate length along the route
-      // this approach syncs the camera and route positions ensuring they move
-      // at roughly equal rates even if they don't contain the same number of points
-
-      const alongRoute = turf.along(
-        turf.lineString(mekong.value),
-        routeLength * (rate + 0.0015)
-      ).geometry.coordinates;
-
-      const alongCamera = turf.along(
-        turf.lineString(mekong.value),
-        cameraRouteLength * rate
-      ).geometry.coordinates;
-      console.log()
       const camera = map.getFreeCameraOptions();
 
       // set the position and altitude of the camera
       camera.position = mapboxgl.MercatorCoordinate.fromLngLat(
         {
-          lng: alongCamera[0],
-          lat: alongCamera[1]
+          lng: alongCamera.value[0],
+          lat: alongCamera.value[1]
         },
-        cameraAltitude
+        cameraAltitude.value
       );
-
       // tell the camera to look at a point along the route
       camera.lookAtPoint({
-        lng: alongRoute[0],
-        lat: alongRoute[1]
+        lng: alongRoute.value[0],
+        lat: alongRoute.value[1]
       });
 
       map.setFreeCameraOptions(camera);
@@ -156,22 +168,20 @@ onMounted(async () => {
         ticking = true;
       }
     }
-
     document.addEventListener('scroll', scrollEvent, { passive: true });
+    // Handle Slider
+    watch(() => props.sliderPosition, (slider, oldVal) => {
+      if (slider) {
+        scrollTargetHeight.value = scrollTarget.value.offsetHeight
+        cameraAltitude.value = slider.y * 5000
+        pitch.value = slider.x * 0.003
+        updateScroll()
+        requestAnimationFrame(frame);
+      }
+    }, { deep: true });
   });
 });
-
-
 </script>
-
-<template>
-  <div class="map-wrapper">
-    <div class="map" id="map"></div>
-  </div>
-  <div class="contents" id="scrollTarget">
-    <div class="wrapper"></div>
-  </div>
-</template>
 
 <style scoped>
 .map-wrapper {

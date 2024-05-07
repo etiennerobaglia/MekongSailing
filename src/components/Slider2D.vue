@@ -8,7 +8,7 @@
 </template>
 
 <script setup>
-import { defineEmits, ref, reactive, computed, onMounted, onBeforeUnmount } from 'vue';
+import { ref, reactive, computed, onMounted, onBeforeUnmount } from 'vue';
 
 const emit = defineEmits(['update:position']);
 

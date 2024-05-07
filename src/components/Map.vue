@@ -1,7 +1,6 @@
 <template>
   <div class="map-wrapper">
-    <input class="slider" type="range" min="0" max="100" />
-    <div class="map" id="map"></div>
+    <div :class="'map-' + props.mapType" :id="'map-' + props.mapType" :ref="mapType"></div>
   </div>
   <div class="contents" id="scrollTarget" ref="scrollTarget">
     <div class="wrapper"></div>
@@ -10,17 +9,16 @@
 
 <script setup>
 import mapboxgl from 'mapbox-gl'
-import mekongGeoJSON from '../../mekong-line.json'
+import mekongLine from '../../mekong-line-scroll.json'
 import "mapbox-gl/dist/mapbox-gl.css";
 import { onMounted, ref, watch } from 'vue'
 import * as turf from '@turf/turf'
 
-const props = defineProps(['sliderPosition'])
+const props = defineProps(['sliderPosition', 'mapType'])
 const emit = defineEmits(['mapLoaded', 'mapStyleLoaded'])
 
-
 const mapPromise = ref()
-const mekong = ref(mekongGeoJSON)
+const mekong = ref(mekongLine.features[0].geometry.coordinates)
 const scrollTarget = ref(null)
 const y = ref(0)
 const rate = ref(0)
@@ -44,6 +42,7 @@ const updateScroll = () => {
     turf.lineString(mekong.value),
     cameraRouteLength.value * rate.value
   ).geometry.coordinates
+
   alongRoute.value = turf.along(
     turf.lineString(mekong.value),
     routeLength.value * (rate.value + pitch.value)
@@ -58,15 +57,13 @@ onMounted(async () => {
   // map setup
   mapboxgl.accessToken = "pk.eyJ1IjoiZXRyb2JhIiwiYSI6ImNsaDR1M3RtYTIxNDgzY29nYjk0azF3eG8ifQ.cf9iT5VHX-AR-QzHwHVLVQ"
   const map = new mapboxgl.Map({
-    container: 'map',
-    style: 'mapbox://styles/mapbox/satellite-v9',
+    container: 'map-' + props.mapType,
+    style: props.mapType == "border-map-white" ? 'mapbox://styles/mapbox/light-v11' : 'mapbox://styles/mapbox/satellite-v9',
     bounds: [
       [100.6054, 20.1209],
       [100.0298, 20.4225]
     ]
   });
-
-  map.addControl(new mapboxgl.NavigationControl());
 
   map.on('style.load', () => {
     emit('mapStyleLoaded')
@@ -96,19 +93,21 @@ onMounted(async () => {
       }
     });
 
-    // add mekong old map
-    map.addSource('mekong', {
-      'type': 'raster',
-      'url': 'mapbox://etroba.7k40fojn'
-    });
-    map.addLayer({
-      'id': 'mekong',
-      'source': 'mekong',
-      'type': 'raster',
-      'paint': {
-        'raster-opacity': 0.7,
-      }
-    });
+    if (props.mapType.includes("border-map")) {
+      // add mekong old map
+      map.addSource('mekong', {
+        'type': 'raster',
+        'url': 'mapbox://etroba.7k40fojn'
+      });
+      map.addLayer({
+        'id': 'mekong',
+        'source': 'mekong',
+        'type': 'raster',
+        'paint': {
+          'raster-opacity': props.mapType == "border-map-alone" ? .7 : 1,
+        }
+      });
+    }
 
     // add styling for the sky (3d background)
     map.addLayer({
@@ -193,11 +192,30 @@ onMounted(async () => {
   left: 0;
 }
 
-#map {
+.map-border-map-alone {
   position: absolute;
   top: 0;
   bottom: 0;
+  left: 0;
   width: 100%;
+  height: 100vh;
+}
+
+.map-satellite {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 50%;
+  height: 100vh;
+}
+
+.map-border-map-white {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: 50%;
   height: 100vh;
 }
 
@@ -210,5 +228,25 @@ onMounted(async () => {
 .wrapper {
   position: relative;
   top: 200px;
+}
+
+@media only screen and (max-width: 700px) {
+  .map-satellite {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 50vh;
+  }
+
+  .map-border-map-white {
+    position: absolute;
+    top: 50vh;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 50vh;
+  }
 }
 </style>

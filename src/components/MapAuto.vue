@@ -1,14 +1,14 @@
 <script setup>
 import mapboxgl from 'mapbox-gl'
-import mekongGeoJSON from '../../mekong-line.json'
+import mekongLine from '../../mekong-line-auto.json'
 import "mapbox-gl/dist/mapbox-gl.css";
 import { onMounted, ref } from 'vue'
 import * as turf from '@turf/turf'
 
-const mekong = ref(mekongGeoJSON)
+const mekong = ref(mekongLine.features[0].geometry.coordinates)
+const emit = defineEmits(['mapLoaded'])
 
 onMounted(async () => {
-  // map setup
   mapboxgl.accessToken = "pk.eyJ1IjoiZXRyb2JhIiwiYSI6ImNsaDR1M3RtYTIxNDgzY29nYjk0azF3eG8ifQ.cf9iT5VHX-AR-QzHwHVLVQ"
   const map = new mapboxgl.Map({
     container: 'map',
@@ -35,19 +35,6 @@ onMounted(async () => {
         }
       }
     })
-    map.addLayer({
-      type: 'line',
-      source: 'trace',
-      id: 'line',
-      paint: {
-        'line-color': 'red',
-        'line-width': 5
-      },
-      layout: {
-        'line-cap': 'round',
-        'line-join': 'round'
-      }
-    });
 
     // add mekong old map
     map.addSource('mekong', {
@@ -59,7 +46,7 @@ onMounted(async () => {
       'source': 'mekong',
       'type': 'raster',
       'paint': {
-        'raster-opacity': 0.7,
+        'raster-opacity': .55
       }
     });
 
@@ -143,13 +130,13 @@ onMounted(async () => {
       });
 
       map.setFreeCameraOptions(camera);
-
       window.requestAnimationFrame(frame);
     }
 
     window.requestAnimationFrame(frame);
+    emit('mapLoaded')
+    console.log('mapLoaded')
   });
-  map.on('click', (e) => console.log(e.lngLat));
 });
 
 </script>
@@ -160,7 +147,7 @@ onMounted(async () => {
 
 <style scoped>
 #map {
+  width: 100%;
   height: 100vh;
-  width: 100vw;
 }
 </style>

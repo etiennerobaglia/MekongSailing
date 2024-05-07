@@ -1,29 +1,32 @@
+<script setup>
+import LoadingOverlay from '../components/LoadingOverlay.vue'
+import PageNavigation from '../components/PageNavigation.vue'
+import { ref } from 'vue'
+
+const mapLoaded = ref(false)
+const mapStyleLoaded = ref(false)
+const sliderPosition = ref(null)
+</script>
+
 <template>
   <div class="overlay">
     <div class="header">
       <div class="title-container">
-        <div class="loader"></div>
-        <div class="title-text">
-          Mekong Sailing<br>
-          <a class="credit" href="https://etienne.robaglia.fr">
-            etienne.robaglia.fr
-          </a>
+        <div v-if="false" class="loader"></div>
+        <div>
+          <div class="title-text">
+            Mekong Sailing<br>
+            <a class="credit" href="https://etienne.robaglia.fr">
+              etienne.robaglia.fr
+            </a>
+          </div>
+          <PageNavigation />
         </div>
       </div>
     </div>
   </div>
+
 </template>
-
-<script>
-import { defineComponent } from 'vue';
-
-
-export default defineComponent({
-  props: {
-    mapLoaded: Boolean,
-  }
-});
-</script>
 
 <style scoped>
 .title-container {

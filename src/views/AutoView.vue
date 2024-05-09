@@ -7,7 +7,7 @@ const mapLoaded = ref(false)
 </script>
 
 <template>
-  <LoadingOverlay v-if="!mapLoaded" />
+  <LoadingOverlay v-if="true" />
   <main>
     <MapAuto @mapLoaded="mapLoaded = true" />
   </main>

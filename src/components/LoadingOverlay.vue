@@ -3,26 +3,14 @@
     <div class="header">
       <div class="title-container">
         <div class="loader"></div>
-        <div class="title-text">
-          Mekong Sailing<br>
-          <a class="credit" href="https://etienne.robaglia.fr">
-            etienne.robaglia.fr
-          </a>
-        </div>
+        <SiteLogo />
       </div>
     </div>
   </div>
 </template>
 
-<script>
-import { defineComponent } from 'vue';
-
-
-export default defineComponent({
-  props: {
-    mapLoaded: Boolean,
-  }
-});
+<script setup>
+import SiteLogo from './SiteLogo.vue'
 </script>
 
 <style scoped>
@@ -41,12 +29,6 @@ export default defineComponent({
   flex-direction: column;
 }
 
-.title-logo {
-  border-radius: 100%;
-  width: 4rem;
-  height: 4rem;
-  margin-right: 8%;
-}
 
 .overlay {
   background: #F9F9F9;

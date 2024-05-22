@@ -1,11 +1,11 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHashHistory } from 'vue-router'
 import MapScroll from '../views/MapScrollView.vue'
 import TwoMapsScroll from '../views/TwoMapsScrollView.vue'
 import Auto from '../views/AutoView.vue'
 import SplashScreen from '../views/SplashScreen.vue'
 
 const router = createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
+  history: createWebHashHistory(import.meta.env.BASE_URL),
   routes: [
     {
       path: '/',
